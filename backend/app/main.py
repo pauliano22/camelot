@@ -11,7 +11,7 @@ This is where the backend starts. It:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
+from app.api.v1.router import api_router
 from app.config import settings
 
 # Lifespan context manager
@@ -56,6 +56,8 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
 )
+
+app.include_router(api_router, prefix="/api/v1")
 
 # Health check endpoint
 @app.get("/health")

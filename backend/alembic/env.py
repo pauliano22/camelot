@@ -6,6 +6,7 @@ from app.db.base import Base
 from app.models.camera import Camera
 from app.models.entity import Entity
 from app.config import settings
+import geoalchemy2
 
 # This is the Alembic Config object
 config = context.config
