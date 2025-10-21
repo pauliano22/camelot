@@ -10,21 +10,21 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
-    
+
     Pydantic automatically:
     - Loads values from .env file
     - Validates types
     - Provides defaults
     """
-    
+
     # Application
     APP_NAME: str = "Home Security System"
     DEBUG: bool = True
-    
+
     # Database
     # Format: postgresql+asyncpg://user:password@host:port/database
     DATABASE_URL: str = "postgresql+asyncpg://admin:password123@postgres:5432/home_security"
-    
+
     # Redis
     REDIS_URL: str = "redis://redis:6379"
 
