@@ -1,20 +1,32 @@
 /**
  * Dashboard Page
- * 
- * Main view showing the map and camera list.
+ *
+ * Main view showing the map, camera list, and event feed.
  */
 
 import { useEffect } from 'react'
 import { MapView } from '../components/map/MapView'
+import { EventFeed } from '../components/EventFeed'
 import { useCameraStore } from '../store/cameraStore'
+import { useEntityStore } from '../store/entityStore'
+
 
 export const Dashboard: React.FC = () => {
   const { cameras, loading, error, fetchCameras } = useCameraStore()
+  const { entities, fetchEntities } = useEntityStore()
 
   // Fetch cameras on mount
   useEffect(() => {
     fetchCameras()
-  }, [fetchCameras])
+    fetchEntities()
+
+    // Poll for updates every 2 seconds
+    const interval = setInterval(() => {
+      fetchEntities()
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [fetchCameras, fetchEntities])
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
@@ -22,7 +34,7 @@ export const Dashboard: React.FC = () => {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">
-            🏠 Home Security System
+            🏠 Camelot
           </h1>
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-300">
@@ -33,34 +45,39 @@ export const Dashboard: React.FC = () => {
                 {cameras.filter((c) => c.is_online).length}
               </span>
             </div>
+            <div className="text-sm text-gray-300">
+              Detections: <span className="font-semibold text-blue-400">
+                {entities.length}
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="flex-1 flex">
-        {/* Sidebar */}
+        {/* Left Sidebar - Cameras */}
         <aside className="w-80 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
           <h2 className="text-lg font-semibold text-white mb-4">Cameras</h2>
-          
+
           {loading && (
             <div className="text-gray-400 text-center py-8">
               Loading cameras...
             </div>
           )}
-          
+
           {error && (
             <div className="bg-red-900/20 border border-red-500 rounded p-3 text-red-200 text-sm">
               {error}
             </div>
           )}
-          
+
           {!loading && cameras.length === 0 && (
             <div className="text-gray-400 text-center py-8">
               No cameras yet. Add one to get started!
             </div>
           )}
-          
+
           {!loading && cameras.map((camera) => (
             <div
               key={camera.id}
@@ -94,6 +111,12 @@ export const Dashboard: React.FC = () => {
         <main className="flex-1">
           <MapView />
         </main>
+
+        {/* Right Sidebar - Event Feed */}
+        <aside className="w-80 bg-gray-800 border-l border-gray-700 p-4 overflow-y-auto">
+          <h2 className="text-lg font-semibold text-white mb-4">Recent Events</h2>
+          <EventFeed />
+        </aside>
       </div>
     </div>
   )
