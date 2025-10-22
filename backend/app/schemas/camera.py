@@ -20,6 +20,7 @@ class CameraCreate(CameraBase):
     rtsp_url: str
     username: Optional[str] = None
     password: Optional[str] = None
+    config: Optional[Dict[str, Any]] = None  # Added this field!
 
 
 class CameraUpdate(BaseModel):
@@ -27,7 +28,7 @@ class CameraUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
-    is_online: Optional[bool] = None  # Added this!
+    is_online: Optional[bool] = None
     config: Optional[Dict[str, Any]] = None
 
 

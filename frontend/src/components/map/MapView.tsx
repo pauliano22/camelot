@@ -2,9 +2,9 @@
  * Map View Component
  *
  * Displays an interactive map with camera markers and entity markers.
- * Uses Mapbox GL JS.
+ * Uses Mapbox GL JS with multiple style options.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useCameraStore } from '../../store/cameraStore'
@@ -12,6 +12,16 @@ import { useEntityStore } from '../../store/entityStore'
 
 // Set Mapbox token
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
+
+// Map style options
+const MAP_STYLES = [
+  { id: 'dark', name: 'Dark', url: 'mapbox://styles/mapbox/dark-v11' },
+  { id: 'light', name: 'Light', url: 'mapbox://styles/mapbox/light-v11' },
+  { id: 'streets', name: 'Streets', url: 'mapbox://styles/mapbox/streets-v12' },
+  { id: 'satellite', name: 'Satellite', url: 'mapbox://styles/mapbox/satellite-v9' },
+  { id: 'satellite-streets', name: 'Satellite Streets', url: 'mapbox://styles/mapbox/satellite-streets-v12' },
+  { id: 'outdoors', name: 'Outdoors', url: 'mapbox://styles/mapbox/outdoors-v12' },
+]
 
 export const MapView: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -22,6 +32,12 @@ export const MapView: React.FC = () => {
   const cameras = useCameraStore((state) => state.cameras)
   const entities = useEntityStore((state) => state.entities)
 
+  const [currentStyle, setCurrentStyle] = useState('dark')
+  const [showControls, setShowControls] = useState(false)
+  const [pitch, setPitch] = useState(0)
+  const [bearing, setBearing] = useState(0)
+  const [is3D, setIs3D] = useState(false)
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return
@@ -29,19 +45,165 @@ export const MapView: React.FC = () => {
     // Create map centered on Ithaca, NY
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: MAP_STYLES.find(s => s.id === currentStyle)!.url,
       center: [-76.5019, 42.4440],
       zoom: 15,
+      pitch: 0,
+      bearing: 0,
     })
 
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+    // Add fullscreen control
+    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right')
+
+    // Add scale control
+    map.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right')
+
+    // Add 3D buildings when map loads
+    map.current.on('load', () => {
+      if (!map.current) return
+      
+      // Add 3D building layer
+      const layers = map.current.getStyle().layers
+      const labelLayerId = layers?.find(
+        (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
+      )?.id
+
+      map.current.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 15,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              15,
+              0,
+              15.05,
+              ['get', 'height'],
+            ],
+            'fill-extrusion-base': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              15,
+              0,
+              15.05,
+              ['get', 'min_height'],
+            ],
+            'fill-extrusion-opacity': 0.6,
+          },
+        },
+        labelLayerId
+      )
+    })
 
     return () => {
       map.current?.remove()
       map.current = null
     }
   }, [])
+
+  // Change map style
+  const changeStyle = (styleId: string) => {
+    if (!map.current) return
+    
+    const style = MAP_STYLES.find(s => s.id === styleId)
+    if (style) {
+      map.current.setStyle(style.url)
+      setCurrentStyle(styleId)
+      
+      // Re-add 3D buildings after style change
+      map.current.once('styledata', () => {
+        if (!map.current) return
+        
+        const layers = map.current.getStyle().layers
+        const labelLayerId = layers?.find(
+          (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
+        )?.id
+
+        if (map.current.getLayer('3d-buildings')) {
+          map.current.removeLayer('3d-buildings')
+        }
+
+        map.current.addLayer(
+          {
+            id: '3d-buildings',
+            source: 'composite',
+            'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'],
+            type: 'fill-extrusion',
+            minzoom: 15,
+            paint: {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'height'],
+              ],
+              'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'min_height'],
+              ],
+              'fill-extrusion-opacity': 0.6,
+            },
+          },
+          labelLayerId
+        )
+      })
+    }
+  }
+
+  // Toggle 3D view
+  const toggle3D = () => {
+    if (!map.current) return
+    
+    if (is3D) {
+      // Switch to 2D
+      map.current.easeTo({ pitch: 0, bearing: 0, duration: 1000 })
+      setPitch(0)
+      setBearing(0)
+      setIs3D(false)
+    } else {
+      // Switch to 3D
+      map.current.easeTo({ pitch: 60, bearing: -20, duration: 1000 })
+      setPitch(60)
+      setBearing(-20)
+      setIs3D(true)
+    }
+  }
+
+  // Reset view
+  const resetView = () => {
+    if (!map.current) return
+    map.current.flyTo({
+      center: [-76.5019, 42.4440],
+      zoom: 15,
+      pitch: 0,
+      bearing: 0,
+      duration: 1500,
+    })
+    setPitch(0)
+    setBearing(0)
+    setIs3D(false)
+  }
 
   // Update camera markers when cameras change
   useEffect(() => {
@@ -123,17 +285,13 @@ export const MapView: React.FC = () => {
         
         // Choose emoji based on entity type
         let emoji = '📍'
-        let color = '#3b82f6'
         
         if (entity.object_type === 'person') {
           emoji = '👤'
-          color = '#eab308'
         } else if (entity.object_type === 'vehicle') {
           emoji = '🚗'
-          color = '#a855f7'
         } else if (entity.object_type === 'animal') {
           emoji = '🐾'
-          color = '#22c55e'
         }
         
         el.innerHTML = emoji
@@ -167,10 +325,74 @@ export const MapView: React.FC = () => {
   }, [entities])
 
   return (
-    <div
-      ref={mapContainer}
-      className="w-full h-full"
-      style={{ minHeight: '400px' }}
-    />
+    <div className="relative w-full h-full">
+      <div
+        ref={mapContainer}
+        className="w-full h-full"
+        style={{ minHeight: '400px' }}
+      />
+      
+      {/* Map Controls Panel */}
+      <div className="absolute top-4 left-4 bg-gray-800/95 backdrop-blur rounded-lg shadow-lg border border-gray-700">
+        <button
+          onClick={() => setShowControls(!showControls)}
+          className="px-4 py-2 text-white hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+        >
+          <span>🗺️</span>
+          <span className="font-medium">Map Controls</span>
+          <span className="text-gray-400">{showControls ? '▼' : '▶'}</span>
+        </button>
+        
+        {showControls && (
+          <div className="p-4 border-t border-gray-700 space-y-4">
+            {/* Map Style Selector */}
+            <div>
+              <label className="text-sm text-gray-300 font-medium mb-2 block">
+                Map Style
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {MAP_STYLES.map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => changeStyle(style.id)}
+                    className={`px-3 py-2 rounded text-sm transition-colors ${
+                      currentStyle === style.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {style.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3D Toggle */}
+            <div>
+              <button
+                onClick={toggle3D}
+                className={`w-full px-4 py-2 rounded font-medium transition-colors ${
+                  is3D
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {is3D ? '📐 2D View' : '🏗️ 3D View'}
+              </button>
+            </div>
+
+            {/* Reset View */}
+            <div>
+              <button
+                onClick={resetView}
+                className="w-full px-4 py-2 rounded font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+              >
+                🎯 Reset View
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

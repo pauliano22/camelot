@@ -76,7 +76,7 @@ export const EventFeed: React.FC = () => {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="h-full overflow-y-auto space-y-2">
       {events.length === 0 ? (
         <div className="text-gray-400 text-center py-8">
           No events yet
