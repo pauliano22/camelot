@@ -1,34 +1,35 @@
 """
-Camera Schemas (API Models)
-
-These define what data comes in/out of API endpoints.
-Pydantic validates everything automatically.
+Camera Schemas
+Request/response models for camera API.
 """
-
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 
+
 class CameraBase(BaseModel):
     """Base camera fields"""
-    name: str = Field(..., min_length=1, max_length=100)
+    name: str
     description: Optional[str] = None
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
+
 
 class CameraCreate(CameraBase):
     """Data needed to create a camera"""
     rtsp_url: str
     username: Optional[str] = None
     password: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+
 
 class CameraUpdate(BaseModel):
     """Data that can be updated"""
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
+    is_online: Optional[bool] = None  # Added this!
     config: Optional[Dict[str, Any]] = None
+
 
 class CameraResponse(CameraBase):
     """What API returns"""
@@ -40,4 +41,4 @@ class CameraResponse(CameraBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True  # Allow creating from ORM models
+        from_attributes = True

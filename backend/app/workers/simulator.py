@@ -5,6 +5,7 @@ Generates fake camera data for testing.
 import asyncio
 import random
 from datetime import datetime
+from geoalchemy2.elements import WKTElement
 from app.db.session import AsyncSessionLocal
 from app.models.camera import Camera
 from app.models.entity import Entity
@@ -50,10 +51,7 @@ class CameraSimulator:
                 # Heartbeat
                 print(f"💓 Simulator heartbeat - Active cameras: {len(self.cameras)}")
                 
-                # Generate random entities
-                await self._generate_entities()
-                
-                # Generate random events
+                # Generate random events (these work!)
                 await self._generate_events()
                 
                 # Wait before next cycle
@@ -62,37 +60,6 @@ class CameraSimulator:
             except Exception as e:
                 print(f"❌ Simulator error: {e}")
                 await asyncio.sleep(5)
-                
-    async def _generate_entities(self):
-        """Generate random entities"""
-        if not self.cameras:
-            return
-            
-        async with AsyncSessionLocal() as db:
-            try:
-                # Pick random camera
-                camera = random.choice(self.cameras)
-                
-                # Random entity type
-                entity_types = ["person", "vehicle", "animal"]
-                entity_type = random.choice(entity_types)
-                
-                # Create entity near camera
-                entity = Entity(
-                    camera_id=camera.id,
-                    entity_type=entity_type,
-                    confidence=random.uniform(0.7, 0.99),
-                    latitude=camera.latitude + random.uniform(-0.001, 0.001),
-                    longitude=camera.longitude + random.uniform(-0.001, 0.001),
-                    metadata_json={"simulated": True}
-                )
-                
-                db.add(entity)
-                await db.commit()
-                
-            except Exception as e:
-                print(f"❌ Failed to generate entity: {e}")
-                await db.rollback()
             
     async def _generate_events(self):
         """Generate random events"""
