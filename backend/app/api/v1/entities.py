@@ -1,14 +1,14 @@
 """
 Entity API Endpoints
 """
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from typing import List
-
 from app.db.session import get_db
 from app.schemas.entity import EntityCreate, EntityResponse
 from app.services.entity_service import EntityService
+from app.models.entity import Entity
 
 router = APIRouter()
 
@@ -24,25 +24,42 @@ async def create_entity(
 @router.get("/entities", response_model=List[EntityResponse])
 async def get_entities(db: AsyncSession = Depends(get_db)):
     """Get all active entities."""
-    service = EntityService(db)
-    entities = await service.get_active_entities()
-
-    result = []
-    for entity in entities:
+    # Query entities with extracted lat/lon from Geography field
+    result = await db.execute(
+        select(
+            Entity.id,
+            Entity.entity_id,
+            Entity.object_type,
+            Entity.camera_id,
+            Entity.confidence,
+            Entity.first_seen,
+            Entity.last_seen,
+            Entity.is_active,
+            Entity.is_recognized,
+            Entity.recognized_as,
+            func.ST_Y(func.ST_AsText(Entity.location)).label('latitude'),
+            func.ST_X(func.ST_AsText(Entity.location)).label('longitude')
+        ).where(Entity.is_active == True)
+    )
+    
+    entities_data = result.all()
+    
+    response = []
+    for row in entities_data:
         entity_dict = {
-            "id": entity.id,
-            "entity_id": entity.entity_id,
-            "object_type": entity.object_type,
-            "latitude": entity.location.latitude if entity.location else 0,
-            "longitude": entity.location.longitude if entity.location else 0,
-            "camera_id": entity.camera_id,
-            "confidence": entity.confidence,
-            "first_seen": entity.first_seen,
-            "last_seen": entity.last_seen,
-            "is_active": entity.is_active,
-            "is_recognized": entity.is_recognized,
-            "recognized_as": entity.recognized_as,
+            "id": row.id,
+            "entity_id": row.entity_id,
+            "object_type": row.object_type,
+            "latitude": float(row.latitude) if row.latitude else 0,
+            "longitude": float(row.longitude) if row.longitude else 0,
+            "camera_id": row.camera_id,
+            "confidence": row.confidence,
+            "first_seen": row.first_seen,
+            "last_seen": row.last_seen,
+            "is_active": row.is_active,
+            "is_recognized": row.is_recognized,
+            "recognized_as": row.recognized_as,
         }
-        result.append(EntityResponse(**entity_dict))
-
-    return result
+        response.append(EntityResponse(**entity_dict))
+    
+    return response
