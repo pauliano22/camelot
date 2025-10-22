@@ -7,8 +7,13 @@ import { useEffect, useState } from 'react'
 import { api } from '../services/api'
 import type { Event } from '../types/event'
 import { Zap, User, Car, Footprints, Radio, AlertTriangle } from 'lucide-react'
+import { FilterState } from './SearchFilter'
 
-export const EventFeed: React.FC = () => {
+interface EventFeedProps {
+  filters?: FilterState
+}
+
+export const EventFeed: React.FC<EventFeedProps> = ({ filters }) => {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +67,52 @@ export const EventFeed: React.FC = () => {
     })
   }
 
+  // Apply filters
+  const filteredEvents = events.filter(event => {
+    if (!filters) return true
+
+    // Search query filter
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase()
+      const matchesType = event.event_type.toLowerCase().includes(query)
+      const matchesCamera = event.camera_id.toString().includes(query)
+      if (!matchesType && !matchesCamera) return false
+    }
+
+    // Event type filter
+    if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(event.event_type)) {
+      return false
+    }
+
+    // Camera filter
+    if (filters.cameraIds.length > 0 && !filters.cameraIds.includes(event.camera_id)) {
+      return false
+    }
+
+    // Confidence filter
+    if (event.confidence * 100 < filters.confidenceMin) {
+      return false
+    }
+
+    // Time range filter
+    if (filters.timeRange !== 'all') {
+      const eventTime = new Date(event.timestamp).getTime()
+      const now = Date.now()
+      const ranges: { [key: string]: number } = {
+        '1h': 60 * 60 * 1000,
+        '24h': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000
+      }
+      const range = ranges[filters.timeRange]
+      if (range && now - eventTime > range) {
+        return false
+      }
+    }
+
+    return true
+  })
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -88,34 +139,32 @@ export const EventFeed: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-      {events.length === 0 ? (
+      {filteredEvents.length === 0 ? (
         <div className="text-center py-12">
           <Radio className="w-12 h-12 text-gray-700 mx-auto mb-3" />
           <div className="text-gray-600 text-sm font-mono">
-            NO EVENTS DETECTED
+            {filters && (filters.eventTypes.length > 0 || filters.cameraIds.length > 0 || filters.confidenceMin > 0 || filters.timeRange !== 'all')
+              ? 'NO EVENTS MATCH FILTERS'
+              : 'NO EVENTS DETECTED'}
           </div>
         </div>
       ) : (
-        events.map((event) => {
+        filteredEvents.map((event) => {
           const IconComponent = getEventIcon(event.event_type)
           return (
             <div
               key={event.id}
               className="group relative"
             >
-              {/* Subtle glow effect */}
               <div className={`absolute inset-0 bg-gradient-to-r ${getEventColor(event.event_type)} opacity-0 group-hover:opacity-100 transition-opacity rounded-lg blur`}></div>
               
               <div className={`relative bg-gradient-to-br ${getEventColor(event.event_type)} border rounded-lg p-3 transition-all backdrop-blur-sm`}>
                 <div className="flex items-start gap-3">
-                  {/* Icon */}
                   <div className="mt-0.5">
                     <IconComponent className="w-5 h-5" />
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
-                    {/* Type and Time */}
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="px-2 py-0.5 rounded text-xs font-mono tracking-wider uppercase bg-black/30">
                         {event.event_type}
@@ -125,7 +174,6 @@ export const EventFeed: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Details */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs font-mono">
                         <span className="text-gray-500">NODE:</span>

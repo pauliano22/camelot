@@ -1,25 +1,25 @@
 /**
  * Map View Component
- * Tactical map with professional icons
+ * Tactical map with professional icons and entity click support
  */
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useCameraStore } from '../../store/cameraStore'
 import { useEntityStore } from '../../store/entityStore'
-import { Map as MapIcon, Layers, Box, RotateCcw, Video as VideoIcon, User, Car, Footprints } from 'lucide-react'
+import { Map as MapIcon, Layers, Box, RotateCcw } from 'lucide-react'
 
 // Set Mapbox token
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
 // Map style options
 const MAP_STYLES = [
-  { id: 'dark', name: 'Dark', url: 'mapbox://styles/mapbox/dark-v11', icon: '🌙' },
-  { id: 'light', name: 'Light', url: 'mapbox://styles/mapbox/light-v11', icon: '☀️' },
-  { id: 'streets', name: 'Streets', url: 'mapbox://styles/mapbox/streets-v12', icon: '🗺️' },
-  { id: 'satellite', name: 'Satellite', url: 'mapbox://styles/mapbox/satellite-v9', icon: '🛰️' },
-  { id: 'satellite-streets', name: 'Hybrid', url: 'mapbox://styles/mapbox/satellite-streets-v12', icon: '🗺️' },
-  { id: 'outdoors', name: 'Outdoors', url: 'mapbox://styles/mapbox/outdoors-v12', icon: '🏔️' },
+  { id: 'dark', name: 'Dark', url: 'mapbox://styles/mapbox/dark-v11' },
+  { id: 'light', name: 'Light', url: 'mapbox://styles/mapbox/light-v11' },
+  { id: 'streets', name: 'Streets', url: 'mapbox://styles/mapbox/streets-v12' },
+  { id: 'satellite', name: 'Satellite', url: 'mapbox://styles/mapbox/satellite-v9' },
+  { id: 'satellite-streets', name: 'Hybrid', url: 'mapbox://styles/mapbox/satellite-streets-v12' },
+  { id: 'outdoors', name: 'Outdoors', url: 'mapbox://styles/mapbox/outdoors-v12' },
 ]
 
 // Create camera marker element
@@ -39,7 +39,7 @@ const createCameraMarker = (isOnline: boolean) => {
 }
 
 // Create entity marker element
-const createEntityMarker = (type: string) => {
+const createEntityMarker = (type: string, onClick: () => void) => {
   const el = document.createElement('div')
   el.className = 'entity-marker-container'
   
@@ -66,10 +66,15 @@ const createEntityMarker = (type: string) => {
   `
   el.style.cursor = 'pointer'
   el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))'
+  el.addEventListener('click', onClick)
   return el
 }
 
-export const MapView: React.FC = () => {
+interface MapViewProps {
+  onEntityClick?: (entityId: number) => void
+}
+
+export const MapView: React.FC<MapViewProps> = ({ onEntityClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const cameraMarkers = useRef<Map<number, mapboxgl.Marker>>(new Map())
@@ -292,23 +297,14 @@ export const MapView: React.FC = () => {
       let marker = entityMarkers.current.get(entity.id)
 
       if (!marker) {
-        const el = createEntityMarker(entity.object_type)
+        const el = createEntityMarker(entity.object_type, () => {
+          if (onEntityClick) {
+            onEntityClick(entity.id)
+          }
+        })
 
         marker = new mapboxgl.Marker(el)
           .setLngLat([entity.longitude, entity.latitude])
-          .setPopup(
-            new mapboxgl.Popup({ offset: 15 }).setHTML(`
-              <div style="padding: 8px; font-family: monospace;">
-                <h3 style="margin: 0 0 4px 0; font-weight: bold;">${entity.entity_id}</h3>
-                <p style="margin: 0; color: #666; font-size: 12px;">
-                  Type: ${entity.object_type.toUpperCase()}
-                </p>
-                <p style="margin: 4px 0 0 0; font-size: 12px;">
-                  Confidence: ${(entity.confidence * 100).toFixed(0)}%
-                </p>
-              </div>
-            `)
-          )
           .addTo(map.current!)
 
         entityMarkers.current.set(entity.id, marker)
@@ -316,7 +312,7 @@ export const MapView: React.FC = () => {
         marker.setLngLat([entity.longitude, entity.latitude])
       }
     })
-  }, [entities, mapLoaded])
+  }, [entities, mapLoaded, onEntityClick])
 
   return (
     <div className="relative w-full h-full">

@@ -349,3 +349,74 @@ Project Link: [https://github.com/pauliano22/camelot](https://github.com/paulian
 ⭐ Star this repo if you find it helpful!
 
 </div>
+
+## 🎮 How to Use Camelot
+
+For detailed usage instructions, see [USER_GUIDE.md](USER_GUIDE.md).
+
+### Quick Start Guide
+
+1. **View the Map**: The center shows your surveillance area with cameras and entities
+2. **Monitor Events**: Click "INTEL" to see real-time event feed
+3. **Search & Filter**: Click "SEARCH" to filter events by type, camera, confidence, or time
+4. **View Timeline**: Click "TIMELINE" to see chronological event history
+5. **Check Cameras**: Click "CAMERAS" to see all camera nodes and their status
+6. **Inspect Entities**: Click any entity marker on the map to see full details
+
+### Feature Overview
+
+| Feature | Button | Description |
+|---------|--------|-------------|
+| Search & Filter | SEARCH | Filter events by type, camera, confidence, time range |
+| Camera List | CAMERAS | View all cameras with status and locations |
+| Timeline | TIMELINE | Chronological view of events grouped by time or camera |
+| Intel Feed | INTEL | Real-time stream of all security events |
+| Entity Details | (Click entity) | Detailed history of any detected entity |
+| Map Controls | (Top-left) | Change map style, toggle 3D, reset view |
+
+### Understanding the Display
+
+**Camera Markers (on map):**
+- 🟢 Green circle = Camera online
+- ⚪ Gray circle = Camera offline
+
+**Entity Markers (on map):**
+- 🟡 Yellow = Person detected
+- 🟣 Purple = Vehicle detected
+- 🟢 Green = Animal detected
+
+**Header Stats:**
+- 📹 = Total cameras in system
+- 📶 = Number of cameras online
+- 🎯 = Active entities currently tracked
+- 🔴 LIVE = System is running
+
+### Workflow: Finding Specific Events
+
+1. Click **SEARCH** button (opens left panel)
+2. Set your filters:
+   - Type search query if needed
+   - Click event type buttons (Person, Vehicle, etc.)
+   - Select specific cameras
+   - Adjust confidence threshold
+   - Choose time range
+3. Click **INTEL** button (opens right panel)
+4. View filtered results
+5. Click entity markers on map for more details
+
+### Workflow: Monitoring Live Activity
+
+1. Click **INTEL** button (right panel opens)
+2. Watch events stream in real-time
+3. Events auto-refresh every 2 seconds
+4. Click entity markers on map to investigate
+5. Use map to see geographical patterns
+
+### Workflow: Reviewing History
+
+1. Click **TIMELINE** button (right panel opens)
+2. Choose grouping:
+   - **TIME**: See events by hour
+   - **CAMERA**: See events by camera node
+3. Scroll through timeline
+4. Click entities on map for full details
