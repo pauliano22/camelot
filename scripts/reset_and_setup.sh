@@ -20,6 +20,10 @@ docker-compose up -d
 echo "⏳ Waiting for database..."
 sleep 10
 
+# Ensure frontend dependencies are installed
+echo "📦 Installing frontend dependencies..."
+docker-compose exec -T frontend npm install
+
 # Run migrations
 echo "📊 Creating database tables..."
 docker-compose exec -T backend alembic upgrade head
