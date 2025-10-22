@@ -1,6 +1,6 @@
 /**
  * Map View Component
- * Tactical map with professional icons and entity click support
+ * Tactical map with enhanced high-res imagery options
  */
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
@@ -12,14 +12,50 @@ import { Map as MapIcon, Layers, Box, RotateCcw } from 'lucide-react'
 // Set Mapbox token
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
 
-// Map style options
+// Enhanced map style options
 const MAP_STYLES = [
-  { id: 'dark', name: 'Dark', url: 'mapbox://styles/mapbox/dark-v11' },
-  { id: 'light', name: 'Light', url: 'mapbox://styles/mapbox/light-v11' },
-  { id: 'streets', name: 'Streets', url: 'mapbox://styles/mapbox/streets-v12' },
-  { id: 'satellite', name: 'Satellite', url: 'mapbox://styles/mapbox/satellite-v9' },
-  { id: 'satellite-streets', name: 'Hybrid', url: 'mapbox://styles/mapbox/satellite-streets-v12' },
-  { id: 'outdoors', name: 'Outdoors', url: 'mapbox://styles/mapbox/outdoors-v12' },
+  { 
+    id: 'dark', 
+    name: 'Dark 3D', 
+    url: 'mapbox://styles/mapbox/dark-v11',
+    supports3D: true
+  },
+  { 
+    id: 'satellite', 
+    name: 'Satellite', 
+    url: 'mapbox://styles/mapbox/satellite-v9',
+    supports3D: false
+  },
+  { 
+    id: 'satellite-streets', 
+    name: 'Hybrid', 
+    url: 'mapbox://styles/mapbox/satellite-streets-v12',
+    supports3D: false
+  },
+  { 
+    id: 'navigation-night', 
+    name: 'Nav Night', 
+    url: 'mapbox://styles/mapbox/navigation-night-v1',
+    supports3D: true
+  },
+  { 
+    id: 'light', 
+    name: 'Light', 
+    url: 'mapbox://styles/mapbox/light-v11',
+    supports3D: true
+  },
+  { 
+    id: 'streets', 
+    name: 'Streets', 
+    url: 'mapbox://styles/mapbox/streets-v12',
+    supports3D: true
+  },
+  { 
+    id: 'outdoors', 
+    name: 'Outdoors', 
+    url: 'mapbox://styles/mapbox/outdoors-v12',
+    supports3D: true
+  },
 ]
 
 // Create camera marker element
@@ -88,31 +124,26 @@ export const MapView: React.FC<MapViewProps> = ({ onEntityClick }) => {
   const [showControls, setShowControls] = useState(false)
   const [is3D, setIs3D] = useState(false)
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || map.current) return
+  const add3DBuildings = () => {
+    if (!map.current) return
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: MAP_STYLES.find(s => s.id === currentStyle)!.url,
-      center: [-76.5019, 42.4440],
-      zoom: 15,
-      pitch: 0,
-      bearing: 0,
-    })
+    const style = MAP_STYLES.find(s => s.id === currentStyle)
+    if (!style?.supports3D) return
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right')
-    map.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right')
+    const layers = map.current.getStyle().layers
+    if (!layers) return
 
-    map.current.on('load', () => {
-      if (!map.current) return
-      
-      const layers = map.current.getStyle().layers
-      const labelLayerId = layers?.find(
-        (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
-      )?.id
+    const labelLayerId = layers.find(
+      (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
+    )?.id
 
+    // Remove existing 3D buildings layer if present
+    if (map.current.getLayer('3d-buildings')) {
+      map.current.removeLayer('3d-buildings')
+    }
+
+    // Add 3D buildings layer
+    try {
       map.current.addLayer(
         {
           id: '3d-buildings',
@@ -146,7 +177,33 @@ export const MapView: React.FC<MapViewProps> = ({ onEntityClick }) => {
         },
         labelLayerId
       )
-      
+    } catch (error) {
+      console.log('Could not add 3D buildings:', error)
+    }
+  }
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return
+
+    const styleConfig = MAP_STYLES.find(s => s.id === currentStyle)!
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: styleConfig.url,
+      center: [-76.5019, 42.4440],
+      zoom: 15,
+      pitch: 0,
+      bearing: 0,
+    })
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right')
+    map.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right')
+
+    map.current.on('load', () => {
+      if (!map.current) return
+      add3DBuildings()
       setMapLoaded(true)
     })
 
@@ -160,57 +217,19 @@ export const MapView: React.FC<MapViewProps> = ({ onEntityClick }) => {
     if (!map.current) return
     
     const style = MAP_STYLES.find(s => s.id === styleId)
-    if (style) {
-      map.current.setStyle(style.url)
-      setCurrentStyle(styleId)
-      
-      map.current.once('styledata', () => {
-        if (!map.current) return
-        
-        const layers = map.current.getStyle().layers
-        const labelLayerId = layers?.find(
-          (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
-        )?.id
+    if (!style) return
 
-        if (map.current.getLayer('3d-buildings')) {
-          map.current.removeLayer('3d-buildings')
-        }
-
-        map.current.addLayer(
-          {
-            id: '3d-buildings',
-            source: 'composite',
-            'source-layer': 'building',
-            filter: ['==', 'extrude', 'true'],
-            type: 'fill-extrusion',
-            minzoom: 15,
-            paint: {
-              'fill-extrusion-color': '#aaa',
-              'fill-extrusion-height': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                15,
-                0,
-                15.05,
-                ['get', 'height'],
-              ],
-              'fill-extrusion-base': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                15,
-                0,
-                15.05,
-                ['get', 'min_height'],
-              ],
-              'fill-extrusion-opacity': 0.6,
-            },
-          },
-          labelLayerId
-        )
-      })
-    }
+    console.log('Changing to style:', style.name, style.url)
+    
+    map.current.setStyle(style.url)
+    setCurrentStyle(styleId)
+    setMapLoaded(false)
+    
+    map.current.once('style.load', () => {
+      console.log('Style loaded:', style.name)
+      add3DBuildings()
+      setMapLoaded(true)
+    })
   }
 
   const toggle3D = () => {

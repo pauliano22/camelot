@@ -5,77 +5,35 @@ All notable changes to Camelot will be documented in this file.
 ## [Latest] - 2025-10-22
 
 ### Added
-- **Collapsible Timeline Groups**: Timeline groups are now collapsible to reduce scrolling
-  - Click group header to expand/collapse
-  - "EXPAND ALL" / "COLLAPSE ALL" button for quick access
-  - Smooth animations when expanding
-  - Groups remember state until you change grouping mode
+- **Enhanced Satellite Imagery**: Upgraded to Mapbox Standard Satellite (significantly better quality)
+- **Navigation Night Style**: Tactical dark style optimized for operations
+- **Dark 3D Style**: Professional 3D dark theme with building extrusions
+- **Collapsible Timeline Groups**: Click to expand/collapse time periods or cameras
+- **Search & Filter Functionality**: Actually filters Intelligence Feed now
+- **Entity Details Panel**: Click entities on map to see full history
 
-### Changed
-- **Search & Filter**: Now actually filters the Intelligence Feed
-  - Set filters in SEARCH panel
-  - Switch to INTEL panel to see filtered results
-  - Filters persist until cleared
-  
-### Fixed
-- Search functionality now properly filters events
-- Timeline performance improved with collapsible groups
-
-## [Earlier Updates]
+### Map Styles Available
+1. **Dark 3D** - Professional tactical theme with 3D buildings
+2. **Satellite** - Mapbox Standard Satellite (highest quality satellite imagery)
+3. **Hybrid** - Satellite with street labels
+4. **Nav Night** - Navigation-optimized dark style
+5. **Light** - Clean bright theme
+6. **Streets** - Detailed street information
+7. **Outdoors** - Topographic features
 
 ### Features Implemented
-1. **Map View**
-   - Interactive Mapbox with 6 map styles
-   - 3D building view
-   - Camera and entity markers
-   - Click entities to see details
+- **Map View**: Interactive Mapbox with 7 professional styles, 3D buildings, camera/entity markers
+- **Search & Filter**: Filter by event type, camera, confidence, time range
+- **Timeline View**: Chronological events grouped by time or camera (collapsible)
+- **Intelligence Feed**: Real-time event stream with filtering
+- **Entity Details**: Full entity information panel
+- **Camera Management**: View all cameras with online/offline status
 
-2. **Search & Filter**
-   - Text search by event type and camera ID
-   - Filter by event types (motion, person, vehicle, animal)
-   - Filter by cameras
-   - Confidence threshold slider
-   - Time range selector
-
-3. **Timeline View**
-   - Chronological event display
-   - Group by time or camera
-   - Collapsible groups for easy navigation
-
-4. **Intelligence Feed**
-   - Real-time event stream
-   - Auto-refresh every 2 seconds
-   - Color-coded by event type
-   - Respects search filters
-
-5. **Entity Details**
-   - Full entity history
-   - Location information
-   - Timeline (first seen, last seen, duration)
-   - Detection source
-   - Recognition status
-
-6. **Camera Management**
-   - View all cameras with status
-   - Online/offline indicators
-   - GPS coordinates
-   - Descriptions
-
-### Technical
-- React 18 with TypeScript
-- Mapbox GL JS for mapping
-- Tailwind CSS for styling
-- Lucide React for icons
-- Zustand for state management
-- FastAPI backend with PostgreSQL + PostGIS
+### Technical Stack
+- React 18 + TypeScript
+- Mapbox GL JS (high-res satellite imagery)
+- Tailwind CSS
+- Lucide React icons
+- Zustand state management
+- FastAPI + PostgreSQL + PostGIS backend
 - Docker containerization
-
-### Improved
-- **Timeline Time Grouping**: Now uses smart time buckets instead of minute-by-minute
-  - "Just Now" (0-1 min ago)
-  - "Last 5 Minutes" (1-5 min ago)
-  - "Last 15 Minutes" (5-15 min ago)
-  - "Last 30 Minutes" (15-30 min ago)
-  - "Last Hour" (30-60 min ago)
-  - Hourly groups for older events (e.g., "18:00")
-  - Makes timeline much more readable and reduces scrolling

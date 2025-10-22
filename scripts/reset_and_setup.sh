@@ -20,9 +20,17 @@ docker-compose up -d
 echo "⏳ Waiting for database..."
 sleep 10
 
-# Ensure frontend dependencies are installed
-echo "📦 Installing frontend dependencies..."
+# Clean and reinstall frontend dependencies
+echo "📦 Cleaning and reinstalling frontend dependencies..."
+docker-compose exec -T frontend rm -rf node_modules package-lock.json 2>/dev/null || true
 docker-compose exec -T frontend npm install
+
+# Restart frontend after clean install
+echo "🔄 Restarting frontend..."
+docker-compose restart frontend
+
+# Wait a bit for frontend
+sleep 5
 
 # Run migrations
 echo "📊 Creating database tables..."
@@ -93,4 +101,5 @@ echo "  1. Front Door (Online)"
 echo "  2. Backyard (Online)"
 echo "  3. Garage (Online)"
 echo ""
+echo "⏳ Frontend may take 10-20 seconds to fully start..."
 echo "Simulator is now running! 🎉"

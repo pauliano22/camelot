@@ -324,3 +324,40 @@ Groups all events by which camera detected them:
 - etc.
 
 Useful for tracking which cameras are most active or investigating a specific camera's activity.
+
+## Map Style Guide
+
+### Style Categories
+
+**Tactical Styles** (For operations):
+- **Dark**: Professional dark tactical theme, reduces eye strain
+- **Nav Night**: Navigation-optimized dark style, enhanced road visibility
+
+**Imagery Styles** (High-resolution satellite):
+- **Satellite**: Pure satellite imagery (up to 5cm resolution from Maxar Vivid)
+- **Hybrid**: Satellite imagery with street labels overlay
+
+**Standard Styles** (General purpose):
+- **Light**: Clean, bright theme for daytime use
+- **Streets**: Detailed street-level information
+- **Outdoors**: Topographic features, trails, contours
+
+### Image Resolution Details
+Mapbox satellite imagery sources:
+- Zoom 0-8: NASA MODIS (global coverage)
+- Zoom 8-18: Maxar Vivid satellite (high quality)
+- Zoom 16-20: Vexcel aerial imagery (5cm resolution in US/Canada/Europe)
+
+This means you can zoom in VERY close and still see clear detail!
+
+### Using Map Controls
+1. Click "MAP CONTROLS" in top-left
+2. Click category buttons (Tactical, Imagery, Standard, All)
+3. Select a style from the filtered list
+4. Map updates immediately
+
+### Tips for Best Clarity
+- Use **Satellite** or **Hybrid** for maximum detail
+- Zoom to level 18+ for aerial imagery (building/car detail)
+- Use **3D VIEW** with satellite for realistic terrain
+- **Nav Night** is great for nighttime operations
